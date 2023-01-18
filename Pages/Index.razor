@@ -1,0 +1,105 @@
+﻿@page "/"
+
+@using Blazorise.TreeView
+@using Blazorise
+
+@inject IDeviceListViewModel deviceViewModel
+@using System.ComponentModel;
+@implements IDisposable
+
+<PageTitle>Index</PageTitle>
+
+<CascadingValue Value=@deviceViewModel Name="DeviceViewModel">
+    <Div Display="Display.Flex" Class="justify-content-lg-start">
+        <DeviceList />
+    </Div>
+</CascadingValue>
+
+<Field>
+    <TextEdit>
+        @if (showButton)
+        {
+            <Button>
+                OK
+                <CloseButton Clicked="HideButton" />
+            </Button>
+        }
+    </TextEdit>
+</Field>
+
+<TreeView Nodes="Items"
+          GetChildNodes="@(item => item.Children)"
+          HasChildNodes="@(item => item.Children?.Any() == true)"
+          ExpandIconName="Blazorise.IconName.Baby"
+          @bind-SelectedNode="selectedNode"
+          @bind-ExpandedNodes="ExpandedNodes">
+    <NodeContent>@context.Text</NodeContent>
+</TreeView>
+
+@code{
+    [CascadingParameter] private AppState? _appState{ get; set; }
+    private bool showButton { get; set; } = true;
+    public class Item
+    {
+        public string? Text { get; set; }
+        public IEnumerable<Item>? Children { get; set; }
+    }
+    private async void HideButton()
+    {
+        await InvokeAsync(() =>
+        {
+            showButton = false;
+            StateHasChanged();
+        });
+
+    }
+    IEnumerable<Item> Items = new[]
+    {
+        new Item { Text = "Item 1" },
+        new Item {
+            Text = "Item 2",
+            Children = new []
+    {
+                new Item { Text = "Item 2.1" },
+                new Item { Text = "Item 2.2", Children = new []
+        {
+                    new Item { Text = "Item 2.2.1" },
+                    new Item { Text = "Item 2.2.2" },
+                    new Item { Text = "Item 2.2.3" },
+                    new Item { Text = "Item 2.2.4" }
+                }
+            },
+            new Item { Text = "Item 2.3" },
+            new Item { Text = "Item 2.4" }
+            }
+        },
+        new Item { Text = "Item 3" },
+    };
+
+    IList<Item> ExpandedNodes = new List<Item>();
+    Item? selectedNode;
+
+    protected override Task OnInitializedAsync()
+    {
+        deviceViewModel.PropertyChanged += OnPropertyChangedHandler;//async (sender, e) =>
+                                                                    //{
+        //    await InvokeAsync(() =>
+        //    {
+        //        StateHasChanged();
+        //    });
+            
+        //};
+        return base.OnInitializedAsync();
+    }
+    async void OnPropertyChangedHandler(object sender, PropertyChangedEventArgs e)
+    {
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
+    }
+    public void Dispose()
+    {
+        deviceViewModel.PropertyChanged -= OnPropertyChangedHandler;
+    }
+}
